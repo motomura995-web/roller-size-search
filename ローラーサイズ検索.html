@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機械長さ検索</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 30px 15px;
+  font-family: Arial, "Noto Sans JP", sans-serif;
+  background: #f3f4f6;
+  color: #222;
+}
+
+.app {
+  max-width: 600px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
+}
+
+h1 {
+  text-align: center;
+  margin-top: 0;
+  font-size: 26px;
+}
+
+.description {
+  text-align: center;
+  color: #777;
+  margin-bottom: 25px;
+}
+
+.search-box {
+  display: flex;
+  gap: 8px;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 15px;
+  font-size: 18px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  outline: none;
+}
+
+input:focus {
+  border-color: #007aff;
+}
+
+button {
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: #007aff;
+  color: white;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0066d6;
+}
+
+.result {
+  margin-top: 20px;
+  padding: 25px;
+  text-align: center;
+  background: #f8f9fa;
+  border-radius: 14px;
+  min-height: 130px;
+}
+
+.machine-name {
+  font-size: 20px;
+  color: #666;
+}
+
+.length {
+  margin-top: 8px;
+  font-size: 42px;
+  font-weight: bold;
+  color: #007aff;
+}
+
+.unit {
+  font-size: 20px;
+  color: #555;
+}
+
+.message {
+  color: #777;
+  padding-top: 20px;
+}
+
+.candidates {
+  margin-top: 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.candidate {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 0;
+  border-bottom: 1px solid #eee;
+  background: white;
+  color: #222;
+  display: flex;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.candidate:last-child {
+  border-bottom: none;
+}
+
+.candidate:hover {
+  background: #f0f6ff;
+}
+
+.count {
+  margin-top: 15px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <h1>ローラーサイズ検索</h1>
+
+  <div class="description">
+    機番を入力してください
+  </div>
+
+  <div class="search-box">
+    <input
+      id="search"
+      type="text"
+      placeholder="例：B115"
+      autocomplete="off"
+    >
+    <button onclick="searchMachine()">検索</button>
+  </div>
+
+  <div id="result" class="result">
+    <div class="message">
+      機番を入力すると長さが表示されます
+    </div>
+  </div>
+
+  <div id="candidates"></div>
+
+  <div id="count" class="count"></div>
+
+</div>
+
+<script>
+
+const machines = {
+
+"1UC":1200,
+"2UC":1600,
+"3UC":1600,
+"4UC":1600,
+"5UC":1800,
+"6UC":2000,
+"8UC":1200,
+"1SL":1050,
+"1ST":1800,
+"旧2ST":1800,
+"2ST":1800,
+"4ST":1400,
+"5ST":1200,
+"6ST":1200,
+"8ST":1050,
+"1RC":1050,
+"2RC":1200,
+"3RC":1200,
+"4RC":1200,
+"5RC":1200,
+"6RC":1050,
+"7RC":1200,
+"8RC":1050,
+"9RC":1200,
+"1STR":1200,
+"9STR":1400,
+"BR":1200,
+
+"A1":2000,
+"A10":1800,
+"A11":1600,
+"A12":1800,
+"A13a":2000,
+"A13b":2000,
+"A14":2000,
+"A15":1800,
+"A16":1600,
+"A17":1600,
+"A18":1600,
+"A19":1400,
+"A21a":2000,
+"A21b":2000,
+"A22":2000,
+"A23":1800,
+"A24":1600,
+"A25":1600,
+"A26":1600,
+"A26a":1600,
+"A27a":1600,
+"A28":1200,
+"A3":1600,
+"A4":1600,
+"A40":2000,
+"A5":1800,
+"A50":1200,
+"A50b":1200,
+"A51":1200,
+"A61":900,
+"A62":900,
+"A63":1200,
+"A66":900,
+"A7":2000,
+"A70":1050,
+"A8":1800,
+"A81":900,
+"A82":1050,
+"A83":1050,
+"A84":1050,
+"A85":900,
+"A9":1600,
+
+"B1":1200,
+"B10":1050,
+"B100":1200,
+"B101":900,
+"B102":900,
+"B103":900,
+"B104":900,
+"B105":900,
+"B106":900,
+"B107":900,
+"B115":1200,
+"B116":1200,
+"B117":1200,
+"B118":1400,
+"B119":1200,
+"B12":1200,
+"B120":1200,
+"B13":1200,
+"B14":1200,
+"B151":1400,
+"B152":1400,
+"B154":1400,
+"B155":1400,
+"B156":1400,
+"B157":1600,
+"B158":1400,
+"B158a":1200,
+"B158b":1200,
+"B16":1200,
+"B160":1400,
+"B162":1400,
+"B163":1400,
+"B163a":1400,
+"B164":1600,
+"B165":1400,
+"B166":1400,
+"B17":1200,
+"B18":1400,
+"B19":1400,
+"B19a":1400,
+"B2":1400,
+"B20":1200,
+"B22":1200,
+"B23":1200,
+"B24":1200,
+"B26":1200,
+"B27":1200,
+"B28":1200,
+"B29":1200,
+"B3":1400,
+"B30":1200,
+"B31":1200,
+"B32a":1200,
+"B32b":1200,
+"B33":1400,
+"B37":1200,
+"B38":1400,
+"B39":1200,
+"B4":1400,
+"B40":1200,
+"B42":1200,
+"B44":1200,
+"B45":750,
+"B48":1050,
+"B49":1050,
+"B5":1400,
+"B50":1050,
+"B51":900,
+"B52":900,
+"B53":900,
+"B55":900,
+"B56":900,
+"B57":900,
+"B58":1400,
+"B59":1400,
+"B6":1400,
+"B60":1400,
+"B60a":1400,
+"B62":1200,
+"B63":1200,
+"B64":1200,
+"B65a":1200,
+"B65b":1200,
+"B66":1200,
+"B67":1200,
+"B7":1050,
+"B71a":1200,
+"B8":1200,
+"B81":1200,
+"B82":1200,
+"B83":1200,
+"B84":1400,
+"B85":1200,
+"B85a":1200,
+"B89":1200,
+"B9":1050,
+"B90":750,
+"B96":900,
+"B99":1200,
+"B99a":1600,
+
+"BFA15":2400,
+"BFA16":1800,
+"BFA17":1800,
+"BFA18":1800,
+"BFA23":2400,
+"BFA24":1800,
+"BFA25":1800,
+"BFA8":2400,
+"BFA9":1800,
+
+"BFB10":1200,
+"BFB103":1200,
+"BFB105":1200,
+"BFB106":1200,
+"BFB107":1200,
+"BFB10S":1200,
+"BFB116":1400,
+"BFB120":1400,
+"BFB14":1400,
+"BFB17":1400,
+"BFB1a":1400,
+"BFB1b":1400,
+"BFB2":1400,
+"BFB24":1400,
+"BFB27":1400,
+"BFB30":1200,
+"BFB3a":1600,
+"BFB4":1600,
+"BFB40":1400,
+"BFB50":1200,
+"BFB57":1200,
+"BFB64":1200,
+"BFB7a":1200,
+"BFB8":1200,
+"BFB85":1400,
+"BFB89":1400,
+
+"BFC101":1400,
+"BFC11":1200,
+"BFC132":1200,
+"BFC201":1400,
+"BFC234":1200,
+
+"BFE1":1400,
+"BFE2":1400,
+
+"C101":900,
+"C108":900,
+"C110":900,
+"C111":900,
+"C115":1400,
+"C116":900,
+"C117":900,
+"C131":900,
+"C132":900,
+"C137":1200,
+"C142":900,
+"C201":1200,
+"C202":1200,
+"C203":1050,
+"C204":1050,
+"C206b":1400,
+"C207":900,
+"C208b":750,
+"C208c":750,
+"C209":900,
+"C210":1050,
+"C211a":900,
+"C211b":900,
+"C212a":1200,
+"C212b":1200,
+"C213":900,
+"C214":900,
+"C215":1400,
+"C216":750,
+"C217":750,
+"C218a":1050,
+"C218b":900,
+"C219a":1400,
+"C219b":1400,
+"C219c":750,
+"C220":1050,
+"C221":1050,
+"C222a":900,
+"C222b":900,
+"C223":750,
+"C224":750,
+"C225a":750,
+"C225b":750,
+"C226":1400,
+"C227":750,
+"C228":1050,
+"C235":750,
+"C236":1200,
+"C237":1200,
+"C238":1200,
+"C8":900,
+
+"CFW1a":1600,
+"CFW1b":1500,
+"CFW2a":1600,
+"CFW2b":1500,
+"CFW3a":1600,
+"CFW3b":1500,
+"CFW4a":1600,
+"CFW4b":1500,
+
+"D1":1200,
+"D2":1200,
+"D3":1200,
+"D4":1200,
+"D5":1200,
+"D5a":1050,
+"D5b":1600,
+"D5c":1050,
+"D6":1200,
+"D7":1050,
+
+"E1":1200,
+"E2":1200,
+
+"G1":1050,
+"G2":1200,
+"G3":1050,
+
+"K101":750,
+"K102":750,
+"K103":1050,
+"K104":1050,
+"K105":1050,
+"K110":900,
+"K111":1050,
+"K112":1050,
+"K113":1050,
+"K114":1050,
+"K115":900,
+"K121":750,
+"K122":750,
+"K123":750,
+"K124":750,
+
+"N1":1400,
+"N2":600,
+"N3":600,
+"N4":600,
+"N5":600,
+
+"W44":1400,
+"W47":1200,
+"W48":1200,
+
+"K110PT":600
+
+};
+
+
+const searchBox = document.getElementById("search");
+const result = document.getElementById("result");
+const candidates = document.getElementById("candidates");
+const count = document.getElementById("count");
+
+
+function searchMachine() {
+
+  const input = searchBox.value.trim();
+
+  candidates.innerHTML = "";
+  count.innerHTML = "";
+
+  if (!input) {
+    result.innerHTML =
+      '<div class="message">機械名を入力してください</div>';
+    return;
+  }
+
+  // 完全一致
+  if (machines[input] !== undefined) {
+
+    result.innerHTML = `
+      <div class="machine-name">${input}</div>
+      <div class="length">
+        ${machines[input].toLocaleString()}
+      </div>
+      <div class="unit">mm</div>
+    `;
+
+    return;
+  }
+
+  // 大文字・小文字を無視した完全一致
+  const exact = Object.keys(machines).find(
+    name => name.toLowerCase() === input.toLowerCase()
+  );
+
+  if (exact) {
+
+    result.innerHTML = `
+      <div class="machine-name">${exact}</div>
+      <div class="length">
+        ${machines[exact].toLocaleString()}
+      </div>
+      <div class="unit">mm</div>
+    `;
+
+    return;
+  }
+
+  // 部分一致
+  const results = Object.keys(machines).filter(
+    name => name.toLowerCase().includes(input.toLowerCase())
+  );
+
+  if (results.length === 0) {
+
+    result.innerHTML = `
+      <div class="message">
+        「${input}」は見つかりませんでした
+      </div>
+    `;
+
+    return;
+  }
+
+  result.innerHTML = `
+    <div class="message">
+      候補が見つかりました
+    </div>
+  `;
+
+  results.slice(0, 20).forEach(name => {
+
+    const button = document.createElement("button");
+
+    button.className = "candidate";
+
+    button.innerHTML = `
+      <span>${name}</span>
+      <span>${machines[name].toLocaleString()} mm</span>
+    `;
+
+    button.onclick = function() {
+
+      searchBox.value = name;
+
+      result.innerHTML = `
+        <div class="machine-name">${name}</div>
+        <div class="length">
+          ${machines[name].toLocaleString()}
+        </div>
+        <div class="unit">mm</div>
+      `;
+
+      candidates.innerHTML = "";
+      count.innerHTML = "";
+
+    };
+
+    candidates.appendChild(button);
+
+  });
+
+  if (results.length > 20) {
+    count.innerHTML =
+      `候補 ${results.length} 件（最初の20件を表示）`;
+  } else {
+    count.innerHTML =
+      `候補 ${results.length} 件`;
+  }
+
+}
+
+
+// 入力するだけで自動検索
+searchBox.addEventListener("input", searchMachine);
+
+
+// Enterキーでも検索
+searchBox.addEventListener("keydown", function(event) {
+
+  if (event.key === "Enter") {
+    searchMachine();
+  }
+
+});
+
+</script>
+
+</body>
+</html>
